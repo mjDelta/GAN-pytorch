@@ -9,7 +9,7 @@ class Discriminator(nn.Module):
 	def __init__(self,h,w,c):
 		super(Discriminator,self).__init__()
 
-		self.model=self.discrminator(,h,w,c)
+		self.model=self.discrminator(h,w,c)
 
 	def discrminator(self,h,w,c):
 		model=nn.Sequential(

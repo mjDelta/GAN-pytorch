@@ -14,6 +14,7 @@ class Generator(nn.Module):
 
 		self.model=self.generator(h,w,c,latent_dim)
 
+
 	def block(self,in_dim,out_dim):
 		layers=nn.Sequential(
 			nn.Linear(in_dim,out_dim),
@@ -22,17 +23,17 @@ class Generator(nn.Module):
 			)
 		return layers
 	def generator(self,h,w,c,latent_dim):
-		model=nn.ModuleList(
-			[self.block(latent_dim,128),
+		model=nn.Sequential(
+			self.block(latent_dim,128),
 			self.block(128,256),
 			self.block(256,512),
 			self.block(512,1024),
 			nn.Linear(1024,h*w*c),
-			nn.Tanh()])
+			nn.Tanh())
 		return model
 	def forward(self,z):
 		img=self.model(z)
-		img=img.view(img.size(0),(self.c,self.h,self.w))
+		img=img.view(img.size(0),self.c,self.h,self.w)
 		return img
 
 if __name__=="__main__":

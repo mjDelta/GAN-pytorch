@@ -19,15 +19,15 @@ h=28
 w=28
 c=1
 latent_dim=128
-batch_size=32
+batch_size=64
 lr=0.0002
 beta1=0.5
 beta2=0.999
 epochs=200
 
-save_imgs=400
+save_imgs=500
 generator=Generator(h,w,c,latent_dim)
-discriminator=Discriminator(h,w,c,latent_dim)
+discriminator=Discriminator(h,w,c)
 adversarial_loss=nn.BCELoss()
 
 if cuda:
@@ -81,10 +81,11 @@ for e in range(epochs):
 		d_loss.backward()
 		optimizer_d.step()
 
-		print("epoch {} batch {}: d_loss {} g_loss {}".format(e,b,round(d_loss,2),round(g_loss,2)))
+		
 
-		if e*len(dataloader)+b%save_imgs==0:
-			save_image(gen_imgs.data[:25],"images{}.png".format(e*len(dataloader)+b),nrow=5,normalize=True)
+		if (e*len(dataloader)+b)%save_imgs==0:
+			save_image(gen_imgs.data[:25],"results/images{}.png".format(e*len(dataloader)+b),nrow=5,normalize=True)
+			print("epoch {} batch {}: d_loss {} g_loss {}".format(e,b,round(d_loss.item(),2),round(g_loss.item(),2)))
 
 
 
