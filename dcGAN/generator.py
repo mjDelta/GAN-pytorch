@@ -15,9 +15,7 @@ class Generator(nn.Module):
 		self.init_size=h//2**4
 		self.pre_trans=nn.Linear(latent_dim,512*self.init_size**2)
 		self.model=self.generator()
-		for p in self.model.parameters():
-			print(p.data.shape)
-
+		
 	def block(self,in_dim,out_dim):
 		layers=nn.Sequential(
 			nn.Conv2d(in_dim,out_dim,3,1,1),

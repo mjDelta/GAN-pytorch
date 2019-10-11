@@ -9,12 +9,16 @@ class Discriminator(nn.Module):
 	def __init__(self,h,w,c):
 		super(Discriminator,self).__init__()
 
-		self.model=self.discrminator(c)
 		self.h=h
 		self.w=w
+		self.model=self.discrminator(c)
+		self.clf_layer=nn.Sequential(
+			nn.Linear(512*(self.h//2**4)**2,1),
+			nn.Sigmoid()
+			)
 
 	def block(self,in_dim,out_dim):
-		layer=nn.Sequentail(
+		layer=nn.Sequential(
 			nn.Conv2d(in_dim,out_dim,3,2,1),
 			nn.LeakyReLU(0.2,inplace=True),
 			nn.BatchNorm2d(out_dim)
@@ -32,8 +36,5 @@ class Discriminator(nn.Module):
 	def forward(self,img):
 		validity=self.model(img)
 		validity=validity.view(validity.size(0),-1)
-		validity=nn.Sequential(
-			nn.Linear(512*(self.h//2**4)**2,1),
-			nn.Sigmoid()
-			)
+		validity=self.clf_layer(validity)
 		return validity
