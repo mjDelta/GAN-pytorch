@@ -33,7 +33,7 @@ def sample_images(trained_batches,dataloader,generator):
 	real_Bs=torch.FloatTensor(imgs_B).to(device)	
 	fake_Bs=generator(real_As)
 	imgs=torch.cat((real_As.data,real_Bs.data,fake_Bs.data),-2)
-	save_image(imgs,"results/images{}.png".format(trained_batches),nrow=5,normalize=True)
+	save_image(imgs,"{}/images{}.png".format(out_dir,trained_batches),nrow=5,normalize=True)
 h=256
 w=256
 c=3
@@ -45,7 +45,7 @@ epochs=200
 n_cpu=4
 save_imgs=500
 dataset="CMP_facade_DB_base"
-
+out_dir="results"
 generator=Generator(l=2)
 discriminator=Discriminator(h,w,c)
 adversarial_loss=nn.MSELoss()
@@ -58,7 +58,7 @@ if cuda:
 generator.apply(weight_init)
 discriminator.apply(weight_init)
 
-os.makedirs("results",exist_ok=True)
+os.makedirs(out_dir,exist_ok=True)
 
 transforms_=[
 	transforms.Resize((h,w),Image.BICUBIC),
@@ -85,6 +85,9 @@ Tensor=torch.cuda.FloatTensor if cuda else torch.FloatTensor
 patch=(1,h//2**4,w//2**4)
 lambda_p=100
 for e in range(epochs):
+	p_epoch_loss=0.
+	g_epoch_loss=0.
+	d_epoch_loss=0.
 	for b,(img_A,img_B) in enumerate(train_dataloader):
 
 		valid=Tensor(img_A.size(0),*patch).fill_(1.0)
@@ -100,6 +103,8 @@ for e in range(epochs):
 		g_loss=adversarial_loss(pred_fake,valid)
 		p_loss=pix_loss(real_B,fake_B)
 		g_total_loss=g_loss+lambda_p*p_loss
+		p_epoch_loss+=p_loss.item()
+		g_epoch_loss+=g_loss.item()
 		g_total_loss.backward()
 		optimizer_g.step()
 
@@ -108,9 +113,15 @@ for e in range(epochs):
 		real_loss=adversarial_loss(discriminator(real_A,real_B),valid)
 		fake_loss=adversarial_loss(discriminator(real_A,fake_B.detach()),fake)
 		d_loss=(real_loss+fake_loss)/2
+		d_epoch_loss+=d_loss.item()
 		d_loss.backward()
 		optimizer_d.step()
 
+
+
+
+
 		if (e*len(train_dataloader)+b)%save_imgs==0:
 			sample_images(e*len(train_dataloader)+b,val_dataloader,generator)
-			print("epoch {} batch {}: d_loss {} g_loss {} p_loss {}".format(e,b,round(d_loss.item(),2),round(g_loss.item(),2)),,round(p_loss.item(),2))
+	print("epoch {} batch {}: d_loss {} g_loss {} p_loss {}".format(e,b,round(d_epoch_loss/len(train_dataloader),2),round(g_epoch_loss/len(train_dataloader),2),round(p_epoch_loss/len(train_dataloader),2)))
+			
