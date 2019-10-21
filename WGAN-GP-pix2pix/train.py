@@ -58,13 +58,13 @@ h=256
 w=256
 c=3
 batch_size=16
-lr=0.0002
-beta1=0.5
-beta2=0.999
+lr=0.0001
+beta1=0.
+beta2=0.9
 epochs=200
 n_cpu=4
-save_imgs=500
-lambda_p=100
+save_imgs=30
+lambda_p=1000
 lambda_gp=10
 n_critic=5
 dataset="CMP_facade_DB_base"
@@ -99,7 +99,7 @@ val_dataloader=torch.utils.data.DataLoader(
 	)
 
 optimizer_g=torch.optim.Adam(generator.parameters(),lr=lr,betas=(beta1,beta2))
-optimizer_d=torch.optim.RMSprop(discriminator.parameters(),lr=lr)
+optimizer_d=torch.optim.Adam(discriminator.parameters(),lr=lr,betas=(beta1,beta2))
 
 for e in range(epochs):
 	p_epoch_loss=0.
