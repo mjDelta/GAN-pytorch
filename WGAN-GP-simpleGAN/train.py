@@ -12,8 +12,7 @@ from torchvision import datasets
 from torchvision import transforms 
 from torchvision.utils import save_image
 import numpy as np
-from datasets import *
-from pytorch import autograd
+from torch import autograd
 cuda=True if torch.cuda.is_available() else False
 device=torch.device("cuda" if cuda else "cpu")
 Tensor=torch.cuda.FloatTensor if cuda else torch.FloatTensor
@@ -49,13 +48,14 @@ def get_gradient_penalty(D,real_imgs,fake_imgs):
 
 h=28
 w=28
+c=1
 batch_size=64
 lr=0.0002
 latent_dim=100
 beta1=0.5
 beta2=0.999
 epochs=200
-save_imgs=8
+save_imgs=500
 lambda_gp=10
 n_critic=5
 dataset="mnist"
@@ -86,33 +86,31 @@ dataloader=torch.utils.data.DataLoader(
 
 optimizer_g=torch.optim.Adam(generator.parameters(),lr=lr,betas=(beta1,beta2))
 optimizer_d=torch.optim.RMSprop(discriminator.parameters(),lr=lr)
-
 for e in range(epochs):
 	for b,(imgs,_) in enumerate(dataloader):
 		real_imgs=torch.FloatTensor(imgs).to(device)
-		z=Tensor(np.random.normal(0,1,(real_imgs.shape[0],latent_dim)))
+		z=Tensor((np.random.normal(0,1,(imgs.shape[0],latent_dim))))
 		fake_imgs=generator(z)
-
 		##Train discriminator
 		optimizer_d.zero_grad()
 		real_score=discriminator(real_imgs)
-		fake_score=discriminator(fake_imgs)
-		gradient_penalty=get_gradient_penalty(discriminator,real_imgs,fake_imgs)
+		fake_score=discriminator(fake_imgs.detach())
+		gradient_penalty=get_gradient_penalty(discriminator,real_imgs.data,fake_imgs.data)
 		d_loss=-torch.mean(real_score)+torch.mean(fake_score)+lambda_gp*gradient_penalty
 		d_loss.backward()
 		optimizer_d.step()
 
 		if b%n_critic==0:
-
 			##Train generator
 			optimizer_g.zero_grad()
+			# fake_imgs=generator(z)
 			fake_score_g=discriminator(fake_imgs)
 			g_loss=-torch.mean(fake_score_g)
 			g_loss.backward()
 			optimizer_g.step()
 
+	
 		if (e*len(dataloader)+b)%save_imgs==0:
 			save_image(fake_imgs.data[:25],"results/images{}.png".format(e*len(dataloader)+b),nrow=5,normalize=True)
-	print("epoch {} batch {}: d_loss {} g_loss {}".format(e,b,round(d_loss,2),round(g_loss,2)))
-			
+			print("epoch {} batch {}: d_loss {} g_loss {}".format(e,b,round(d_loss.item(),2),round(g_loss.item(),2)))		
 

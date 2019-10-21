@@ -12,33 +12,28 @@ class Generator(nn.Module):
 		self.c=c
 		self.w=w
 
-		self.init_size=h//2**4
-		self.pre_trans=nn.Linear(latent_dim,512*self.init_size**2)
-		self.model=self.generator()
-		
+		self.model=self.generator(h,w,c,latent_dim)
+
+
 	def block(self,in_dim,out_dim):
 		layers=nn.Sequential(
-			nn.Conv2d(in_dim,out_dim,3,1,1),
-			nn.BatchNorm2d(out_dim,0.8),
-			nn.LeakyReLU(0.2,inplace=True),
-			nn.Upsample(scale_factor=2)
+			nn.Linear(in_dim,out_dim),
+			nn.BatchNorm1d(out_dim,0.8),
+			nn.LeakyReLU(0.2,inplace=True)
 			)
 		return layers
-	def generator(self):
+	def generator(self,h,w,c,latent_dim):
 		model=nn.Sequential(
-			nn.BatchNorm2d(512),
-			nn.LeakyReLU(0.2,inplace=True),
-			nn.Upsample(scale_factor=2),
-			self.block(512,256),
-			self.block(256,128),
-			self.block(128,64),
-			nn.Conv2d(64,self.c,3,1,1),
+			self.block(latent_dim,128),
+			self.block(128,256),
+			self.block(256,512),
+			self.block(512,1024),
+			nn.Linear(1024,h*w*c),
 			nn.Tanh())
 		return model
 	def forward(self,z):
-		latent_img=self.pre_trans(z)
-		latent_img=latent_img.view(latent_img.size(0),512,self.init_size,self.init_size)
-		img=self.model(latent_img)
+		img=self.model(z)
+		img=img.view(img.size(0),self.c,self.h,self.w)
 		return img
 
 if __name__=="__main__":
