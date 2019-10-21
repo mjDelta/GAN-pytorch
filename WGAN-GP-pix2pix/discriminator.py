@@ -44,7 +44,6 @@ class Discriminator(nn.Module):
 		img=torch.cat((img_A,img_B),1)
 		validity=self.conv(img)
 		validity_flat=validity.view(validity.size(0),-1)
-		print(validity_flat.size())
 		score=self.linear(validity_flat)
 		return score
 if __name__=="__main__":
