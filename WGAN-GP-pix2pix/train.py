@@ -5,7 +5,7 @@
 
 import torch.nn as nn
 import torch
-from generator import Generator
+from generator import Generator2
 from discriminator import Discriminator
 import os
 from torchvision import datasets
@@ -57,20 +57,20 @@ def get_gradient_penalty(D,real,fake):
 h=256
 w=256
 c=3
-batch_size=16
+batch_size=4
 lr=0.0001
 beta1=0.9
 beta2=0.999
 epochs=200
 save_imgs=30
-lambda_p=1000
+lambda_p=50
 lambda_gp=10
 n_critic=5
 dataset="CMP_facade_DB_base"
-out_dir="results3-seg2img"
-generator=Generator(l=2)
+out_dir="results7-seg2img"
+generator=Generator2(n_filters=32,kernel_size=3,l=4)
 discriminator=Discriminator(h,w,c)
-pix_loss=nn.L1Loss()
+pix_loss=nn.MSELoss()
 if cuda:
 	generator=generator.cuda()
 	discriminator=discriminator.cuda()

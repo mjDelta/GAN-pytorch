@@ -5,11 +5,44 @@
 
 from torch import nn
 import torch
+class Generator2(nn.Module):
+	def __init__(self,n_filters=32,kernel_size=5,in_channel=3,l=4):
+		super(Generator2,self).__init__()
+		self.pre=nn.Sequential(
+			nn.Conv2d(in_channel,n_filters,kernel_size,padding=(kernel_size-1)//2),
+			nn.BatchNorm2d(n_filters),
+			nn.ReLU(),
+			)##256
+		self.block1=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		self.block2=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		# self.block3=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		# self.block4=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		# self.block5=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		# self.block6=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		self.final_block=nn.Sequential(
+			nn.Conv2d(n_filters,n_filters,1,padding=0),
+			nn.BatchNorm2d(n_filters),
+			nn.ReLU(),
+			nn.Conv2d(n_filters,in_channel,1,padding=0),
+			nn.Tanh())
+	def forward(self,x):
+		pre=self.pre(x)
+		output1=self.block1(pre)
+		output2=self.block2(output1)
+		# output3=self.block3(output2)
+		# output4=self.block4(output3)
+		# output5=self.block5(output4)
+		# output6=self.block6(output5)
+
+		y=self.final_block(output2)
+		return y
+
 class Generator(nn.Module):
 	def __init__(self,n_filters=32,kernel_size=5,in_channel=3,l=4):
 		super(Generator,self).__init__()
 		self.pre=nn.Sequential(
 			nn.Conv2d(in_channel,n_filters,kernel_size,padding=(kernel_size-1)//2),
+			nn.BatchNorm2d(n_filters),
 			nn.ReLU(),
 			)##256
 		self.down1=BlockDown(n_filters,n_filters,kernel_size,l)
@@ -24,6 +57,7 @@ class Generator(nn.Module):
 		self.final_block=nn.Sequential(
 			nn.Conv2d(2*n_filters,n_filters,1,padding=0),
 			DenseBlock(k=n_filters,l=l,filter_size=kernel_size),
+			nn.BatchNorm2d(n_filters),
 			nn.ReLU(),
 			nn.Upsample(scale_factor=2,mode="nearest"),
 			nn.Conv2d(n_filters,in_channel,1,padding=0),
@@ -54,6 +88,7 @@ class BlockUp(nn.Module):
 		self.block=nn.Sequential(
 			nn.Conv2d(in_dim,out_dim,kernel_size,padding=(kernel_size-1)//2),
 			DenseBlock(k=out_dim,l=l,filter_size=kernel_size),
+			nn.BatchNorm2d(out_dim),
 			nn.ReLU(),
 			nn.Upsample(scale_factor=2,mode="nearest"))
 	def forward(self,x):
@@ -64,10 +99,12 @@ class BlockDown(nn.Module):
 		self.block=nn.Sequential(
 			nn.Conv2d(in_dim,in_dim,kernel_size,padding=(kernel_size-1)//2),
 			DenseBlock(k=in_dim,l=l,filter_size=kernel_size),
+			nn.BatchNorm2d(in_dim),
 			nn.ReLU(),
 			)##256
 		self.block_down=nn.Sequential(
 			nn.Conv2d(in_dim,out_dim,kernel_size,padding=(kernel_size-1)//2,stride=2),
+			nn.BatchNorm2d(out_dim),
 			nn.ReLU()			
 			)
 	def forward(self,x):
@@ -83,6 +120,7 @@ class DenseBlock(nn.Module):
 		for i in range(l):
 			self.layers.append(
 				nn.Sequential(
+					nn.BatchNorm2d(k+i*k),
 					nn.ReLU(),
 					nn.Conv2d(k+i*k,k,filter_size,padding=(filter_size-1)//2)
 				)
