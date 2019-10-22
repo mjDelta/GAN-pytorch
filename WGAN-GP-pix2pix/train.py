@@ -67,7 +67,7 @@ lambda_p=50
 lambda_gp=10
 n_critic=5
 dataset="CMP_facade_DB_base"
-out_dir="results7-seg2img"
+out_dir="results8-seg2img"
 generator=Generator2(n_filters=32,kernel_size=3,l=4)
 discriminator=Discriminator(h,w,c)
 pix_loss=nn.MSELoss()

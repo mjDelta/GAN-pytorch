@@ -8,34 +8,44 @@ import torch
 class Generator2(nn.Module):
 	def __init__(self,n_filters=32,kernel_size=5,in_channel=3,l=4):
 		super(Generator2,self).__init__()
-		self.pre=nn.Sequential(
+		self.pre1=nn.Sequential(
 			nn.Conv2d(in_channel,n_filters,kernel_size,padding=(kernel_size-1)//2),
 			nn.BatchNorm2d(n_filters),
 			nn.ReLU(),
-			)##256
+			)
 		self.block1=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
-		self.block2=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
-		# self.block3=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
-		# self.block4=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
-		# self.block5=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
-		# self.block6=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
-		self.final_block=nn.Sequential(
-			nn.Conv2d(n_filters,n_filters,1,padding=0),
+		self.block1_out=nn.Sequential(
+			nn.Conv2d(n_filters,in_channel,1,padding=0),
+			nn.BatchNorm2d(in_channel),
+			nn.ReLU()
+			)
+		self.pre2=nn.Sequential(
+			nn.Conv2d(in_channel,n_filters,kernel_size,padding=(kernel_size-1)//2),
 			nn.BatchNorm2d(n_filters),
 			nn.ReLU(),
+			)
+		self.block2=DenseBlock(k=n_filters,l=l,filter_size=kernel_size)
+		self.block2_out=nn.Sequential(
 			nn.Conv2d(n_filters,in_channel,1,padding=0),
-			nn.Tanh())
-	def forward(self,x):
-		pre=self.pre(x)
-		output1=self.block1(pre)
-		output2=self.block2(output1)
-		# output3=self.block3(output2)
-		# output4=self.block4(output3)
-		# output5=self.block5(output4)
-		# output6=self.block6(output5)
+			nn.BatchNorm2d(in_channel),
+			nn.ReLU()
+			)
 
-		y=self.final_block(output2)
-		return y
+	def forward(self,x):
+		pre1=self.pre1(x)
+		output1=self.block1(pre1)
+		output1=self.block1_out(output1)
+
+		in_block2=torch.add(output1,x)
+		in_block2=torch.clamp(in_block2,0,1)
+
+		pre2=self.pre2(in_block2)
+		output2=self.block2(pre2)
+		output2=self.block2_out(output2)	
+
+		out_block2=torch.add(output2,in_block2)
+		out_block2=torch.clamp(out_block2,0,1)
+		return out_block2
 
 class Generator(nn.Module):
 	def __init__(self,n_filters=32,kernel_size=5,in_channel=3,l=4):
