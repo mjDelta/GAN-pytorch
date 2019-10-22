@@ -31,7 +31,8 @@ class ImageDataset(Dataset):
         img_A = self.transform(img_A)
         img_B = self.transform(img_B)
 
-        return img_A,img_B
+        # return img_A,img_B
+        return img_B,img_A
 
     def __len__(self):
         return len(self.B_files)

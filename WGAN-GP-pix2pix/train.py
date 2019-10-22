@@ -37,11 +37,11 @@ def sample_images(trained_batches,dataloader,generator):
 	fake_Bs=generator(real_As)
 	imgs=torch.cat((real_As.data,real_Bs.data,fake_Bs.data),-2)
 	save_image(imgs,"{}/images{}.png".format(out_dir,trained_batches),nrow=5,normalize=True)
-def get_gradient_penalty(D,real_As,real_Bs,fake_Bs):
-	alpha=Tensor(np.random.random((real_As.size(0),1,1,1)))
-	interpolates=(alpha*real_Bs+(1-alpha)*fake_Bs).requires_grad_(True)
-	d_interpolate=D(real_As,interpolates)
-	fake=Tensor(real_As.size(0),1).fill_(1.0)
+def get_gradient_penalty(D,real,fake):
+	alpha=Tensor(np.random.random((real.size(0),1,1,1)))
+	interpolates=(alpha*real+(1-alpha)*fake).requires_grad_(True)
+	d_interpolate=D(interpolates)
+	fake=Tensor(real.size(0),1).fill_(1.0)
 	gradients=autograd.grad(
 		outputs=d_interpolate,
 		inputs=interpolates,
@@ -68,7 +68,7 @@ lambda_p=1000
 lambda_gp=10
 n_critic=5
 dataset="CMP_facade_DB_base"
-out_dir="results"
+out_dir="results2-seg2img"
 generator=Generator(l=2)
 discriminator=Discriminator(h,w,c)
 pix_loss=nn.L1Loss()
@@ -113,9 +113,9 @@ for e in range(epochs):
 
 		##Train discriminator
 		optimizer_d.zero_grad()
-		real_score=discriminator(real_A,real_B)
-		fake_score=discriminator(real_A,fake_B.detach())
-		gradient_penalty=get_gradient_penalty(discriminator,real_A.data,real_B.data,fake_B.data)
+		real_score=discriminator(real_B)
+		fake_score=discriminator(fake_B.detach())
+		gradient_penalty=get_gradient_penalty(discriminator,real_B.data,fake_B.data)
 		d_loss=-torch.mean(real_score)+torch.mean(fake_score)+lambda_gp*gradient_penalty
 		d_epoch_loss+=d_loss.item()
 		d_loss.backward()
@@ -124,7 +124,7 @@ for e in range(epochs):
 			##Train generator
 			optimizer_g.zero_grad()
 			# fake_B=generator(real_A)
-			fake_score_g=discriminator(real_A,fake_B)
+			fake_score_g=discriminator(fake_B)
 			p_loss=lambda_p*pix_loss(real_B,fake_B)
 			g_loss=-torch.mean(fake_score_g)
 			g_total_loss=g_loss+p_loss

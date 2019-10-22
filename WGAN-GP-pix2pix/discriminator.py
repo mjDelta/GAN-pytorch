@@ -23,7 +23,7 @@ class Discriminator(nn.Module):
 		return layer
 	def conv_block(self,c):
 		model=nn.Sequential(
-			self.block(c*2,64),#128
+			self.block(c,64),#128
 			self.block(64,128),#64
 			self.block(128,256),#32
 			self.block(256,256),#16
@@ -40,8 +40,7 @@ class Discriminator(nn.Module):
 			)
 		return model
 
-	def forward(self,img_A,img_B):
-		img=torch.cat((img_A,img_B),1)
+	def forward(self,img):
 		validity=self.conv(img)
 		validity_flat=validity.view(validity.size(0),-1)
 		score=self.linear(validity_flat)
