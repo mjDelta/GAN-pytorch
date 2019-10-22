@@ -10,8 +10,7 @@ class Generator(nn.Module):
 		super(Generator,self).__init__()
 		self.pre=nn.Sequential(
 			nn.Conv2d(in_channel,n_filters,kernel_size,padding=(kernel_size-1)//2),
-			nn.BatchNorm2d(n_filters),
-			nn.LeakyReLU(),
+			nn.ReLU(),
 			)##256
 		self.down1=BlockDown(n_filters,n_filters,kernel_size,l)
 		self.down2=BlockDown(n_filters,2*n_filters,kernel_size,l)
@@ -25,8 +24,7 @@ class Generator(nn.Module):
 		self.final_block=nn.Sequential(
 			nn.Conv2d(2*n_filters,n_filters,1,padding=0),
 			DenseBlock(k=n_filters,l=l,filter_size=kernel_size),
-			nn.BatchNorm2d(n_filters),
-			nn.LeakyReLU(),
+			nn.ReLU(),
 			nn.Upsample(scale_factor=2,mode="nearest"),
 			nn.Conv2d(n_filters,in_channel,1,padding=0),
 			nn.Tanh())
@@ -56,8 +54,7 @@ class BlockUp(nn.Module):
 		self.block=nn.Sequential(
 			nn.Conv2d(in_dim,out_dim,kernel_size,padding=(kernel_size-1)//2),
 			DenseBlock(k=out_dim,l=l,filter_size=kernel_size),
-			nn.BatchNorm2d(out_dim),
-			nn.LeakyReLU(),
+			nn.ReLU(),
 			nn.Upsample(scale_factor=2,mode="nearest"))
 	def forward(self,x):
 		return self.block(x)
@@ -67,13 +64,11 @@ class BlockDown(nn.Module):
 		self.block=nn.Sequential(
 			nn.Conv2d(in_dim,in_dim,kernel_size,padding=(kernel_size-1)//2),
 			DenseBlock(k=in_dim,l=l,filter_size=kernel_size),
-			nn.BatchNorm2d(in_dim),
-			nn.LeakyReLU(),
+			nn.ReLU(),
 			)##256
 		self.block_down=nn.Sequential(
 			nn.Conv2d(in_dim,out_dim,kernel_size,padding=(kernel_size-1)//2,stride=2),
-			nn.BatchNorm2d(out_dim),
-			nn.LeakyReLU()			
+			nn.ReLU()			
 			)
 	def forward(self,x):
 		out=self.block(x)
@@ -88,8 +83,7 @@ class DenseBlock(nn.Module):
 		for i in range(l):
 			self.layers.append(
 				nn.Sequential(
-					nn.BatchNorm2d(k+i*k),
-					nn.LeakyReLU(),
+					nn.ReLU(),
 					nn.Conv2d(k+i*k,k,filter_size,padding=(filter_size-1)//2)
 				)
 			)
