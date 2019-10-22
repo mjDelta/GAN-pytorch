@@ -36,14 +36,14 @@ class Generator2(nn.Module):
 		output1=self.block1(pre1)
 		output1=self.block1_out(output1)
 
-		in_block2=torch.add(output1,x)
+		in_block2=torch.nn.functional.relu(torch.add(output1,x))
 		in_block2=torch.clamp(in_block2,0,1)
 
 		pre2=self.pre2(in_block2)
 		output2=self.block2(pre2)
 		output2=self.block2_out(output2)	
 
-		out_block2=torch.add(output2,in_block2)
+		out_block2=torch.nn.functional.relu(torch.add(output2,in_block2))
 		out_block2=torch.clamp(out_block2,0,1)
 		return out_block2
 
