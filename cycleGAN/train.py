@@ -63,18 +63,18 @@ def sample_images(trained_batches,dataloader,generator):
 h=256
 w=256
 c=3
-batch_size=4
+batch_size=16
 lr=0.0001
 beta1=0.5
 beta2=0.999
 epochs=200
-save_imgs=30
+save_imgs=100
 lambda_cyc=10.
 lambda_id=5.
 dataset="monet2photo"
 out_dir="results"
-generator_AB=Generator(l=2,n_filters=16)
-generator_BA=Generator(l=2,n_filters=16)
+generator_AB=Generator(l=2,n_filters=8)
+generator_BA=Generator(l=2,n_filters=8)
 discriminator_A=Discriminator(h,w,c)
 discriminator_B=Discriminator(h,w,c)
 gan_loss=nn.MSELoss()
@@ -120,9 +120,11 @@ buffer_fake_A=ReplayBuffer(max_size=batch_size)
 buffer_fake_B=ReplayBuffer(max_size=batch_size)
 
 for e in range(epochs):
-	p_epoch_loss=0.
-	g_epoch_loss=0.
+	identity_epoch_loss=0.
+	gan_epoch_loss=0.
+	cycle_epoch_loss=0.
 	d_epoch_loss=0.
+	cnter=0
 	for b,(img_A,img_B) in enumerate(train_dataloader):
 
 		real_A=torch.FloatTensor(img_A).to(device)
@@ -139,16 +141,19 @@ for e in range(epochs):
 
 		gan_loss_B=gan_loss(discriminator_B(fake_B),valid)
 		gan_loss_A=gan_loss(discriminator_A(fake_A),valid)
+		gan_loss_=gan_loss_A+gan_loss_B
 
 		ident_loss_A=ident_loss(generator_BA(real_A),real_A)
 		ident_loss_B=ident_loss(generator_AB(real_B),real_B)
+		ident_loss_=(ident_loss_A+ident_loss_B)*lambda_id
 
 		recon_A=generator_BA(fake_B)
 		recon_B=generator_AB(fake_A)
 		cycle_loss_A=cycle_loss(real_A,recon_A)
 		cycle_loss_B=cycle_loss(real_B,recon_B)
+		cycle_loss_=(cycle_loss_A+cycle_loss_B)*lambda_cyc
 
-		loss_G=gan_loss_A+gan_loss_B+(ident_loss_A+ident_loss_B)*lambda_id+(cycle_loss_A+cycle_loss_B)*lambda_cyc
+		loss_G=gan_loss_+ident_loss_+cycle_loss_
 		loss_G/=2
 		loss_G.backward()
 		optimizer_g.step()
@@ -170,9 +175,16 @@ for e in range(epochs):
 		loss_D_B.backward()
 		optimizer_d_B.step()
 
-		if (e*len(train_dataloader)+b)%save_imgs==0:
-			sample_images(e*len(train_dataloader)+b,val_dataloader,generator_AB)
-	print("epoch {} batch {}: d_loss {} g_loss {} p_loss {}".format(e,b,round(d_epoch_loss/len(train_dataloader),2),round(g_epoch_loss/len(train_dataloader),2),round(p_epoch_loss/len(train_dataloader),2)))
+		identity_epoch_loss+=ident_loss_.item()
+		gan_epoch_loss+=gan_loss_.item()
+		cycle_epoch_loss+=cycle_loss_.item()
+		d_epoch_loss+=loss_D_A.item()
+		d_epoch_loss+=loss_D_B.item()
+		cnter+=1
+
+		if (e*len(train_dataloader)//batch_size+b)%save_imgs==0:
+			sample_images(e*len(train_dataloader)//batch_size+b,val_dataloader,generator_AB)
+	print("epoch {}: d_loss {}\tcycle_loss {}\tidentity_loss {}\tgan_loss {}".format(e,round(d_epoch_loss/cnter,2),round(cycle_epoch_loss/cnter,2),round(identity_epoch_loss/cnter,2),round(gan_epoch_loss/cnter,2)))
 			
 
 
